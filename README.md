@@ -5,12 +5,13 @@ Projeto utilizando recursos de hardware - Grupo 5
 
 Um app para monitorar possíveis acidentes.
 
-Hardware
-Acelerômetro
-GPS
-Network
-Áudio
-Como funciona
+# Hardware
+
+- Acelerômetro
+- GPS
+- Áudio
+  
+# Como funciona
 
 Se detectar uma queda muito brusca:
 
@@ -23,6 +24,5 @@ Você está bem?
 
 Se o usuário não responder em 15 segundos:
 
-pega a localização;
-
-toca um alarme.
+- pega a localização;
+- toca um alarme.
