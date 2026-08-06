@@ -26,7 +26,13 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-audio"
+      "expo-audio",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Este app precisa de acesso à localização para demonstrar o recurso de GPS."
+        }
+      ]
     ]
   }
 }
