@@ -5,12 +5,13 @@ Projeto utilizando recursos de hardware - Grupo 5
 
 Um app para monitorar possíveis acidentes.
 
-Hardware
-Acelerômetro
-GPS
-Network
-Áudio
-Como funciona
+# Hardware
+
+- Acelerômetro
+- GPS
+- Áudio
+  
+# Como funciona
 
 Se detectar uma queda muito brusca:
 
@@ -23,6 +24,7 @@ Você está bem?
 
 Se o usuário não responder em 15 segundos:
 
+<<<<<<< HEAD
 pega a localização;
 
 toca um alarme.
@@ -76,3 +78,7 @@ projeto_hardware/
         │   └── alert_modal_screen.tsx            # Tela de confirmação "Você está bem?"
         └── widgets/
             └── countdown_timer_widget.tsx        # Renderizador dos 15 segundos
+=======
+- pega a localização;
+- toca um alarme.
+>>>>>>> a74502666219c17b812d58b934e1b95692cc197e
