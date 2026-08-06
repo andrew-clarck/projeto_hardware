@@ -48,6 +48,12 @@ projeto_hardware/
         ├── home_screen.tsx   # Tela principal (Monitorando...)
         └── alert_modal.tsx   # Pop-up: "Você está bem?" [Sim] [Não]
 
-        
+
+hardware/ (Entradas e Saídas Físicas): Isolamos a leitura do acelerômetro, o áudio e o GPS aqui. Se no futuro você mudar a biblioteca de sensores ou o sistema operacional, só altera os arquivos dessa pasta.
+
+services/ (A Cérebro do App): O arquivo fall_detector.ts escuta os dados do acelerômetro. Quando detecta uma variação brusca, aciona o temporizador de 15 segundos. Se o tempo zerar sem resposta, ele chama o notifier.ts e o audio.ts.
+
+ui/ (A Apoiadora de Decisões): A interface do usuário não sabe como o acelerômetro calcula a gravidade. Ela apenas exibe o aviso "Você está bem?" quando o fall_detector.ts manda, e envia o clique no botão "Sim" (cancela) ou "Não" (dispara alerta imediatamente).
+
 - pega a localização;
 - toca um alarme.
