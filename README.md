@@ -24,5 +24,5 @@ Você está bem?
 Se o usuário não responder em 15 segundos:
 
 pega a localização;
-envia para uma API;
+
 toca um alarme.
