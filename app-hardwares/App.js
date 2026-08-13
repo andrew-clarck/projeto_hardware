@@ -18,3 +18,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 });
+
+import * as Location from 'expo-location';
+
+const { status } = await Location.requestForegroundPermissionsAsync();
+
+if (status !== 'granted') {
+  // usuario negou — informe na UI, nao trave o app
+  return;
+}
