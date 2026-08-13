@@ -1,13 +1,9 @@
 import { useEffect, useState } from "react";
-import {Modal,StyleSheet,Text,TouchableOpacity,View,} from "react-native";
+import { Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 const TEMPO_ALERTA = 10;
 
-export default function AlertScreen({
-  visible,
-  onConfirm,
-  onEmergency,
-}) {
+export default function AlertScreen({ visible, onConfirm, onEmergency }) {
   const [tempo, setTempo] = useState(TEMPO_ALERTA);
 
   useEffect(() => {
@@ -19,7 +15,7 @@ export default function AlertScreen({
 
     const contador = setInterval(() => {
       setTempo((tempoAtual) => {
-        if (tempoAtual <= 0) {
+        if (tempoAtual <= 1) {
           clearInterval(contador);
 
           onEmergency();
@@ -34,7 +30,7 @@ export default function AlertScreen({
     return () => {
       clearInterval(contador);
     };
-  }, [visible]);
+  }, [visible, onEmergency]);
 
   return (
     <Modal
@@ -44,58 +40,39 @@ export default function AlertScreen({
       onRequestClose={() => {}}
     >
       <View style={styles.overlay}>
-
         <View style={styles.alertBox}>
-
           <Text style={styles.alertIcon}>⚠️</Text>
 
-          <Text style={styles.title}>
-            Possível queda detectada
-          </Text>
+          <Text style={styles.title}>Possível queda detectada</Text>
 
-          <Text style={styles.question}>
-            Você está bem?
-          </Text>
+          <Text style={styles.question}>Você está bem?</Text>
 
-          <Text style={styles.timer}>
-            Responda em {tempo} segundos
-          </Text>
+          <Text style={styles.timer}>Responda em {tempo} segundos</Text>
 
           <View style={styles.buttonsContainer}>
-
-            {/* SIM */}
             <TouchableOpacity
               style={[styles.button, styles.yesButton]}
               onPress={onConfirm}
               activeOpacity={0.8}
             >
-              <Text style={styles.buttonText}>
-                Sim
-              </Text>
+              <Text style={styles.buttonText}>Sim</Text>
             </TouchableOpacity>
 
-            {/* NÃO */}
             <TouchableOpacity
               style={[styles.button, styles.noButton]}
               onPress={onEmergency}
               activeOpacity={0.8}
             >
-              <Text style={styles.buttonText}>
-                Não
-              </Text>
+              <Text style={styles.buttonText}>Não</Text>
             </TouchableOpacity>
-
           </View>
-
         </View>
-
       </View>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-
   overlay: {
     flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.5)",
@@ -110,11 +87,14 @@ const styles = StyleSheet.create({
     padding: 25,
     alignItems: "center",
     elevation: 10,
+
     shadowColor: "#000",
+
     shadowOffset: {
       width: 0,
       height: 4,
     },
+
     shadowOpacity: 0.25,
     shadowRadius: 6,
   },
@@ -175,5 +155,4 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: "bold",
   },
-
 });

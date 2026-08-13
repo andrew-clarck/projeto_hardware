@@ -1,28 +1,29 @@
 import { useEffect, useState } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import MapView, { Marker } from "react-native-maps";
-import { iniciarEmergencia } from "../services/emergencyService";
+
+import { obterLocalizacao } from "../services/localization";
 import { useAudio } from "../hardware/audio";
 
 export default function EmergencyScreen() {
   const [localizacao, setLocalizacao] = useState(null);
-
   const [erro, setErro] = useState(null);
 
   const { reproduzirAlerta } = useAudio();
 
   useEffect(() => {
     async function executarEmergencia() {
-      const resultado = await iniciarEmergencia();
+      try {
+        const local = await obterLocalizacao();
 
-      if (!resultado.sucesso) {
-        setErro(resultado.erro);
-        return;
+        setLocalizacao(local);
+
+        reproduzirAlerta(require("../../assets/alerta.mp3"));
+      } catch (erro) {
+        console.error("Erro ao iniciar emergência:", erro);
+
+        setErro(erro.message);
       }
-
-      setLocalizacao(resultado.localizacao);
-
-      reproduzirAlerta(require("../../assets/alerta.mp3"));
     }
 
     executarEmergencia();
@@ -59,6 +60,9 @@ export default function EmergencyScreen() {
         initialRegion={{
           latitude: localizacao.latitude,
           longitude: localizacao.longitude,
+
+          latitudeDelta: 0.05,
+          longitudeDelta: 0.05,
         }}
       >
         <Marker

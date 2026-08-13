@@ -1,20 +1,21 @@
-import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, Alert } from "react-native";
+import { useEffect, useState } from "react";
+import { View, Text, StyleSheet } from "react-native";
 
-// serviços e hardware do projeto
 import { iniciarMonitoramentoDeQueda } from "../services/fall_detector";
 import { pararAcelerometro } from "../hardware/accelerometer";
 
+import AlertScreen from "./alert_modal";
+
 export default function HomeScreen({ navigation }) {
-  // 1. monitoramento do acelerometro
+  const [alertVisible, setAlertVisible] = useState(false);
+
   useEffect(() => {
     let subscription;
 
     async function iniciar() {
       try {
         subscription = await iniciarMonitoramentoDeQueda(() => {
-          // ao detectar queda, manda para o alert modal
-          navigation.navigate("AlertModal");
+          setAlertVisible(true);
         });
       } catch (erro) {
         console.error("Erro no acelerômetro:", erro);
@@ -26,12 +27,29 @@ export default function HomeScreen({ navigation }) {
     return () => {
       pararAcelerometro(subscription);
     };
-  }, [navigation]);
+  }, []);
+
+  function confirmarUsuario() {
+    setAlertVisible(false);
+  }
+
+  function acionarEmergencia() {
+    setAlertVisible(false);
+
+    navigation.navigate("emergency_screen");
+  }
 
   return (
     <View style={styles.container}>
       <Text style={styles.titulo}>Sistema de Segurança</Text>
+
       <Text style={styles.status}>🟢 Monitoramento ativo</Text>
+
+      <AlertScreen
+        visible={alertVisible}
+        onConfirm={confirmarUsuario}
+        onEmergency={acionarEmergencia}
+      />
     </View>
   );
 }
@@ -44,12 +62,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+
   titulo: {
     fontSize: 24,
     fontWeight: "bold",
     color: "#2c3e50",
     marginBottom: 6,
   },
+
   status: {
     fontSize: 16,
     color: "#27ae60",
