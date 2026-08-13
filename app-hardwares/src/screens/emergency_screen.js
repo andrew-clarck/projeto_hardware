@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+
 import MapView, { Marker } from "react-native-maps";
 
 import { obterLocalizacaoAtual } from "../services/localization";
@@ -14,7 +15,7 @@ export default function EmergencyScreen({ navigation }) {
   useEffect(() => {
     async function executarEmergencia() {
       try {
-        const local = await obterLocalizacao();
+        const local = await obterLocalizacaoAtual();
 
         setLocalizacao(local);
 
@@ -27,14 +28,11 @@ export default function EmergencyScreen({ navigation }) {
     }
 
     executarEmergencia();
-
-    return () => {
-      pararAlerta();
-    };
   }, []);
 
   function encerrarEmergencia() {
     pararAlerta();
+
     navigation.navigate("home_screen");
   }
 

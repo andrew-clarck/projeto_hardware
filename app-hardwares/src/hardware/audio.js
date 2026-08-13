@@ -10,8 +10,12 @@ export function useAudio() {
   }
 
   function pararAlerta() {
-    player.pause();
-    player.seekTo(0);
+    try {
+      player.pause();
+      player.seekTo(0);
+    } catch (erro) {
+      console.log("Não foi possível parar o áudio.");
+    }
   }
 
   return {

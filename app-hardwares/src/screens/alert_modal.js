@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
-const TEMPO_ALERTA = 10;
+const TEMPO_ALERTA = 15;
 
 export default function AlertScreen({ visible, onConfirm, onEmergency }) {
   const [tempo, setTempo] = useState(TEMPO_ALERTA);
@@ -13,18 +13,18 @@ export default function AlertScreen({ visible, onConfirm, onEmergency }) {
 
     setTempo(TEMPO_ALERTA);
 
+    let tempoAtual = TEMPO_ALERTA;
+
     const contador = setInterval(() => {
-      setTempo((tempoAtual) => {
-        if (tempoAtual <= 1) {
-          clearInterval(contador);
+      tempoAtual--;
 
-          onEmergency();
+      setTempo(tempoAtual);
 
-          return 0;
-        }
+      if (tempoAtual <= 0) {
+        clearInterval(contador);
 
-        return tempoAtual - 1;
-      });
+        onEmergency();
+      }
     }, 1000);
 
     return () => {
@@ -35,7 +35,7 @@ export default function AlertScreen({ visible, onConfirm, onEmergency }) {
   return (
     <Modal
       visible={visible}
-      transparent={true}
+      transparent
       animationType="fade"
       onRequestClose={() => {}}
     >
@@ -87,14 +87,11 @@ const styles = StyleSheet.create({
     padding: 25,
     alignItems: "center",
     elevation: 10,
-
     shadowColor: "#000",
-
     shadowOffset: {
       width: 0,
       height: 4,
     },
-
     shadowOpacity: 0.25,
     shadowRadius: 6,
   },

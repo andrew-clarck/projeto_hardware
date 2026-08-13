@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { View, Text, StyleSheet } from "react-native";
 
 import {
@@ -12,17 +12,6 @@ export default function HomeScreen({ navigation }) {
   const [alertVisible, setAlertVisible] = useState(false);
 
   useEffect(() => {
-    async function iniciar() {
-      try {
-        await iniciarMonitoramento(() => {
-          // Uma possível queda foi detectada
-          setAlertVisible(true);
-        });
-      } catch (erro) {
-        console.error("Erro no monitoramento de queda:", erro);
-      }
-    }
-
     iniciar();
 
     return () => {
@@ -30,15 +19,31 @@ export default function HomeScreen({ navigation }) {
     };
   }, []);
 
-  function confirmarUsuario() {
-    setAlertVisible(false);
+  async function iniciar() {
+    try {
+      await iniciarMonitoramento(() => {
+        // Uma possível queda foi detectada
+        pararMonitoramento();
+
+        setAlertVisible(true);
+      });
+    } catch (erro) {
+      console.error("Erro no monitoramento de queda:", erro);
+    }
   }
 
-  function acionarEmergencia() {
+  const confirmarUsuario = useCallback(() => {
+    setAlertVisible(false);
+
+    // Reinicia o monitoramento
+    iniciar();
+  }, []);
+
+  const acionarEmergencia = useCallback(() => {
     setAlertVisible(false);
 
     navigation.navigate("emergency_screen");
-  }
+  }, [navigation]);
 
   return (
     <View style={styles.container}>
