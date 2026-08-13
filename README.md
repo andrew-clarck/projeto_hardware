@@ -42,7 +42,7 @@ O aplicativo inicia o protocolo de emergência:
 - exibe a localização em um mapa;
 - reproduz o áudio de alerta.
 
-### Se o usuário não responder em 15 segundos
+### Se o usuário não responder em 10 segundos
 
 O mesmo protocolo de emergência é iniciado automaticamente:
 
