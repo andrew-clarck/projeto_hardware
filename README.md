@@ -1,59 +1,75 @@
 # projeto_hardware
-Projeto utilizando recursos de hardware - Grupo 5
 
-2. Detector de Quedas 🚨
+## Projeto utilizando recursos de hardware — Grupo 5
 
-Um app para monitorar possíveis acidentes.
+### 2. Detector de Quedas 🚨
 
-# Hardware
+Um aplicativo para monitorar possíveis acidentes utilizando recursos de hardware do dispositivo.
+
+O aplicativo detecta movimentos que possam indicar uma queda e solicita ao usuário uma confirmação. Caso o usuário não responda dentro do tempo determinado ou informe que não está bem, o aplicativo inicia o protocolo de emergência.
+
+---
+
+# Hardware utilizado
 
 - Acelerômetro
 - GPS
 - Áudio
-  
+
+---
+
 # Como funciona
 
-Se detectar uma queda muito brusca:
+O aplicativo permanece monitorando os movimentos do dispositivo através do acelerômetro.
 
-⚠ Possível queda detectada
+Quando uma movimentação brusca que possa indicar uma queda é detectada, o aplicativo exibe um alerta:
 
-Você está bem?
+> ⚠️ Possível queda detectada
 
-[Sim]
-[Não]
+> Você está bem?
 
-Se o usuário não responder em 15 segundos:
+**[Sim] [Não]**
 
-pega a localização;
+### Se o usuário clicar em "Sim"
 
-toca um alarme.
+O alerta é encerrado e o aplicativo continua o monitoramento normalmente.
 
+### Se o usuário clicar em "Não"
 
-## Estruturação de Pastas
+O aplicativo inicia o protocolo de emergência:
+
+- obtém a localização atual através do GPS;
+- exibe a localização em um mapa;
+- reproduz o áudio de alerta.
+
+### Se o usuário não responder em 15 segundos
+
+O mesmo protocolo de emergência é iniciado automaticamente:
+
+- obtém a localização atual;
+- exibe a localização em um mapa;
+- reproduz o áudio de alerta.
+
+---
+
+# Estrutura de Pastas
+
+```text
 projeto_hardware/
 ├── assets/
-│   └── alarm.mp3             # Áudio do alarme
+│   └── alarm.mp3
 │
 └── src/
-    ├── hardware/             # 1. Integração com o dispositivo (Sensores)
-    │   ├── accelerometer.ts  # Captura movimento (x, y, z)
-    │   ├── gps.ts            # Captura latitude/longitude
-    │   └── audio.ts          # Toca o áudio de emergência
+    ├── hardware/
+    │   ├── accelerometer.js
+    │   ├── gps.js
+    │   └── audio.js
     │
-    ├── services/             # 2. Regras de Negócio e Lógica Principal
-    │   ├── fall_detector.ts  # Algoritmo que detecta impacto e roda os 15s
-    │   └── notifier.ts       # Envia a localização via rede/SMS
+    ├── services/
+    │   ├── fall_detector.ts
+    │   └── localization.ts
     │
-    └── ui/                   # 3. Telas e Interface
-        ├── home_screen.tsx   # Tela principal (Monitorando...)
-        └── alert_modal.tsx   # Pop-up: "Você está bem?" [Sim] [Não]
-
-
-hardware/ (Entradas e Saídas Físicas): Isolamos a leitura do acelerômetro, o áudio e o GPS aqui. Se no futuro você mudar a biblioteca de sensores ou o sistema operacional, só altera os arquivos dessa pasta.
-
-services/ (A Cérebro do App): O arquivo fall_detector.ts escuta os dados do acelerômetro. Quando detecta uma variação brusca, aciona o temporizador de 15 segundos. Se o tempo zerar sem resposta, ele chama o notifier.ts e o audio.ts.
-
-ui/ (A Apoiadora de Decisões): A interface do usuário não sabe como o acelerômetro calcula a gravidade. Ela apenas exibe o aviso "Você está bem?" quando o fall_detector.ts manda, e envia o clique no botão "Sim" (cancela) ou "Não" (dispara alerta imediatamente).
-
-- pega a localização;
-- toca um alarme.
+    └── screens/
+        ├── home_screen.js
+        ├── alert_modal.js
+        └── emergency_screen.js
