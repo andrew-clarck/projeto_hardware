@@ -1,15 +1,15 @@
 import { useEffect, useState } from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import MapView, { Marker } from "react-native-maps";
 
-import { obterLocalizacao } from "../services/localization";
+import { obterLocalizacaoAtual } from "../services/localization";
 import { useAudio } from "../hardware/audio";
 
-export default function EmergencyScreen() {
+export default function EmergencyScreen({ navigation }) {
   const [localizacao, setLocalizacao] = useState(null);
   const [erro, setErro] = useState(null);
 
-  const { reproduzirAlerta } = useAudio();
+  const { reproduzirAlerta, pararAlerta } = useAudio();
 
   useEffect(() => {
     async function executarEmergencia() {
@@ -27,7 +27,16 @@ export default function EmergencyScreen() {
     }
 
     executarEmergencia();
+
+    return () => {
+      pararAlerta();
+    };
   }, []);
+
+  function encerrarEmergencia() {
+    pararAlerta();
+    navigation.navigate("home_screen");
+  }
 
   if (erro) {
     return (
@@ -35,6 +44,10 @@ export default function EmergencyScreen() {
         <Text style={styles.titulo}>Erro</Text>
 
         <Text>{erro}</Text>
+
+        <TouchableOpacity style={styles.botao} onPress={encerrarEmergencia}>
+          <Text style={styles.textoBotao}>Voltar para tela inicial</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -60,7 +73,6 @@ export default function EmergencyScreen() {
         initialRegion={{
           latitude: localizacao.latitude,
           longitude: localizacao.longitude,
-
           latitudeDelta: 0.05,
           longitudeDelta: 0.05,
         }}
@@ -74,6 +86,14 @@ export default function EmergencyScreen() {
           description="Possível emergência"
         />
       </MapView>
+
+      <TouchableOpacity
+        style={styles.botao}
+        onPress={encerrarEmergencia}
+        activeOpacity={0.8}
+      >
+        <Text style={styles.textoBotao}>Estou bem — Encerrar emergência</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -98,5 +118,20 @@ const styles = StyleSheet.create({
 
   mapa: {
     flex: 1,
+  },
+
+  botao: {
+    margin: 20,
+    paddingVertical: 15,
+    borderRadius: 10,
+    backgroundColor: "#43A047",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  textoBotao: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "bold",
   },
 });

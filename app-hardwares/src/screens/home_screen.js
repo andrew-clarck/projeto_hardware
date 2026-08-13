@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { View, Text, StyleSheet } from "react-native";
 
-import { iniciarMonitoramentoDeQueda } from "../services/fall_detector";
-import { pararAcelerometro } from "../hardware/accelerometer";
+import {
+  iniciarMonitoramento,
+  pararMonitoramento,
+} from "../services/fall_detector";
 
 import AlertScreen from "./alert_modal";
 
@@ -10,22 +12,21 @@ export default function HomeScreen({ navigation }) {
   const [alertVisible, setAlertVisible] = useState(false);
 
   useEffect(() => {
-    let subscription;
-
     async function iniciar() {
       try {
-        subscription = await iniciarMonitoramentoDeQueda(() => {
+        await iniciarMonitoramento(() => {
+          // Uma possível queda foi detectada
           setAlertVisible(true);
         });
       } catch (erro) {
-        console.error("Erro no acelerômetro:", erro);
+        console.error("Erro no monitoramento de queda:", erro);
       }
     }
 
     iniciar();
 
     return () => {
-      pararAcelerometro(subscription);
+      pararMonitoramento();
     };
   }, []);
 
