@@ -51,7 +51,14 @@ O mesmo protocolo de emergência é iniciado automaticamente:
 - reproduz o áudio de alerta.
 
 ---
+# Prints
 
+![alt text](image.png)
+
+![alt text](image-1.png)
+
+![alt text](image-2.png)
+---
 # Estrutura de Pastas
 
 ```text
