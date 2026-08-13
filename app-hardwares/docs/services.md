@@ -1,167 +1,418 @@
 # Documentação dos Serviços: Detector de Quedas
 
-Esta documentação detalha a camada de `services/` do aplicativo, responsável por orquestrar a lógica de negócio, os sensores de hardware e as notificações de emergência.
+Esta documentação detalha a camada de `services/` do aplicativo, responsável pelas regras de negócio e pela lógica que utiliza os recursos de hardware.
+
+A camada de Services não controla diretamente a interface. Ela recebe informações dos módulos de `hardware/` e fornece os resultados necessários para as `screens/`.
 
 ---
 
-## 1. Serviço de Notificação (`services/notifier.ts`)
+## Estrutura
 
-**Propósito:** 
-Atuar como o "Mensageiro" do aplicativo. É acionado exclusivamente quando uma emergência é confirmada (ou seja, quando o tempo de cancelamento esgota). Ele busca as coordenadas atuais do dispositivo e formata a mensagem de socorro.
+```text
+services/
+├── fall_detector.ts
+└── localization.ts
+```
 
-### Função Principal
-
-\`\`\`typescript
-notificarEmergencia(contatos: string[]): Promise<boolean>
-\`\`\`
-
-**Parâmetros:**
-*   `contatos` (Array de strings): Uma lista com os números de telefone ou identificadores dos contatos de emergência (ex: `['+5511999999999', '+5511888888888']`).
-
-**Retorno:**
-*   Retorna `true` se o processo de buscar localização e disparar o alerta for concluído com sucesso. Retorna `false` em caso de falha (ex: sem permissão de GPS).
-
-**Comportamento Interno:**
-1.  Chama a função `obterLocalizacao()` da camada de hardware.
-2.  Gera um link clicável do Google Maps com a latitude e longitude exatas.
-3.  Simula (ou executa, dependendo da sua API) o envio da mensagem.
+````
 
 ---
 
-## 2. Serviço Detector de Quedas (`services/fall_detector.ts`)
+# 1. Serviço Detector de Quedas (`services/fall_detector.ts`)
 
 **Propósito:**
-Atuar como o "Cérebro" do aplicativo. Ele gerencia o ciclo de vida do acelerômetro, processa os cálculos físicos para identificar impactos bruscos e controla a máquina de estados da emergência (ativação do alarme, contagem regressiva e acionamento do socorro).
 
-### Estruturas de Dados
+Atuar como o responsável pela lógica de detecção de possíveis quedas.
 
-**`AcoesQueda` (Type):** Um "contrato" que obriga a tela a fornecer ferramentas essenciais para o serviço funcionar.
-*   `reproduzirAlerta(audio)`: Função para tocar o som.
-*   `pararAlerta()`: Função para parar o som.
-*   `audioFile`: O arquivo de áudio carregado (ex: `require('./sirene.mp3')`).
-*   `contatos`: Lista de números de emergência.
-*   `onTimerTick(segundos)`: Callback que devolve o número de segundos restantes (15, 14, 13...).
-*   `onAlertaEnviado()`: Callback executado quando o socorro é acionado com sucesso.
+O serviço utiliza o acelerômetro através de `hardware/accelerometer.js`, recebe os valores dos eixos X, Y e Z e calcula a intensidade do movimento.
 
-### Funções Principais
+Quando o valor ultrapassa o limite definido, o serviço informa à interface que uma possível queda foi detectada.
 
-*   **`iniciarMonitoramento(acoes: AcoesQueda): Promise<void>`**
-    Liga o sensor e começa a escutar os eixos X, Y e Z. Se a força vetorial passar de 3.0 Gs, inicia automaticamente o protocolo de emergência.
+O `fall_detector.ts` não é responsável por:
 
-*   **`cancelarAlarmePeloUsuario(acoes: { pararAlerta: () => void }): void`**
-    Interrompe a contagem regressiva, cala a sirene e volta ao estado de monitoramento padrão. Usado pelo botão "Estou Bem" da interface.
+- controlar o contador da interface;
+- reproduzir áudio;
+- acessar o GPS;
+- enviar mensagens;
+- controlar telas;
+- exibir alertas.
 
-*   **`pararMonitoramento(): void`**
-    Desliga o sensor de hardware e limpa todos os relógios (timers) da memória. Usado quando o usuário quer desativar o app totalmente.
+Essas responsabilidades pertencem às respectivas camadas do projeto.
 
 ---
 
-## 3. Guia de Integração com a UI (Exemplo)
+## Constante de detecção
 
-Como o módulo de áudio (`useAudio`) é um Hook do React, toda a orquestração deve partir de dentro de um Componente Funcional. Veja um exemplo real de como conectar os arquivos de hardware e os arquivos de serviço na interface (`App.tsx` ou `DetectorScreen.tsx`).
+O serviço possui um limite de impacto:
 
-\`\`\`tsx
-import React, { useState, useEffect } from 'react';
-import { View, Text, Button, StyleSheet } from 'react-native';
+```ts
+const LIMITE_IMPACTO = 3.0;
+```
 
-// 1. Importa os hooks do hardware
-import { useAudio } from './hardware/audio'; 
+Os valores do acelerômetro são utilizados para calcular a magnitude do movimento:
 
-// 2. Importa o Cérebro (Serviços)
-import { 
-  iniciarMonitoramento, 
-  cancelarAlarmePeloUsuario, 
-  pararMonitoramento 
-} from './services/fall_detector';
+```ts
+const magnitude = Math.sqrt(dados.x ** 2 + dados.y ** 2 + dados.z ** 2);
+```
 
-export default function App() {
-  // Inicializa o Hook de Áudio do hardware
-  const { reproduzirAlerta, pararAlerta } = useAudio();
+Quando:
 
-  // Estados para controlar o que aparece na tela
-  const [monitorando, setMonitorando] = useState(false);
-  const [tempoRestante, setTempoRestante] = useState<number | null>(null);
+```text
+magnitude > LIMITE_IMPACTO
+```
 
-  // Simulação de dados do usuário
-  const MEUS_CONTATOS = ['+5511912345678'];
-  const ARQUIVO_SIRENE = require('./assets/sirene.mp3');
+uma possível queda é identificada.
 
-  // Quando o componente for destruído, garante que tudo desligue
-  useEffect(() => {
-    return () => pararMonitoramento();
-  }, []);
+---
 
-  const ligarDetector = async () => {
-    setMonitorando(true);
-    
-    // Passamos todas as dependências para o cérebro
-    await iniciarMonitoramento({
-      reproduzirAlerta,
-      pararAlerta,
-      audioFile: ARQUIVO_SIRENE,
-      contatos: MEUS_CONTATOS,
-      // O cérebro atualiza o estado da tela aqui a cada 1 segundo:
-      onTimerTick: (segundos) => setTempoRestante(segundos), 
-      onAlertaEnviado: () => {
-        alert("Socorro acionado com sucesso!");
-        setTempoRestante(null); // Reseta a tela
-      }
-    });
-  };
+## Função principal
 
-  const desligarDetector = () => {
-    pararMonitoramento();
-    setMonitorando(false);
-    setTempoRestante(null);
-  };
+```ts
+iniciarMonitoramento(onQueda: () => void): Promise<void>
+```
 
-  const indicarFalsoPositivo = () => {
-    cancelarAlarmePeloUsuario({ pararAlerta });
-    setTempoRestante(null); // Tira o timer da tela
-  };
+### Parâmetros
 
-  return (
-    <View style={styles.container}>
-      <Text style={styles.titulo}>Detector de Quedas</Text>
+**`onQueda`**
 
-      {/* Se o timer estiver rodando, a pessoa caiu! */}
-      {tempoRestante !== null ? (
-        <View style={styles.alertaContainer}>
-          <Text style={styles.textoAlerta}>Queda Detectada!</Text>
-          <Text style={styles.cronometro}>{tempoRestante}s</Text>
-          <Text style={styles.subtexto}>Enviando socorro em breve...</Text>
-          
-          <Button 
-            title="ESTOU BEM! CANCELAR" 
-            color="red" 
-            onPress={indicarFalsoPositivo} 
-          />
-        </View>
-      ) : (
-        <View style={styles.controlesContainer}>
-          <Text style={styles.status}>
-            Status: {monitorando ? "Ativo e Vigiando" : "Desligado"}
-          </Text>
-          
-          {!monitorando ? (
-            <Button title="Ligar Proteção" onPress={ligarDetector} />
-          ) : (
-            <Button title="Desligar" color="gray" onPress={desligarDetector} />
-          )}
-        </View>
-      )}
-    </View>
-  );
-}
+Função executada quando uma possível queda é detectada.
 
-const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
-  titulo: { fontSize: 24, fontWeight: 'bold', marginBottom: 30 },
-  status: { fontSize: 16, marginBottom: 20 },
-  controlesContainer: { alignItems: 'center' },
-  alertaContainer: { alignItems: 'center', backgroundColor: '#ffe6e6', padding: 30, borderRadius: 10 },
-  textoAlerta: { fontSize: 22, color: 'red', fontWeight: 'bold' },
-  cronometro: { fontSize: 60, fontWeight: 'bold', color: 'red', marginVertical: 10 },
-  subtexto: { fontSize: 16, marginBottom: 20 },
+Exemplo:
+
+```js
+iniciarMonitoramento(() => {
+  setAlertVisible(true);
 });
-\`\`\`
+```
+
+Nesse caso, o Service não sabe o que acontecerá depois da queda. Ele apenas informa:
+
+> "Uma possível queda foi detectada."
+
+A `HomeScreen` decide o que fazer com essa informação.
+
+---
+
+## Funcionamento
+
+O fluxo do serviço é:
+
+```text
+fall_detector.ts
+       │
+       ▼
+iniciarAcelerometro()
+       │
+       ▼
+Recebe x, y e z
+       │
+       ▼
+Calcula magnitude
+       │
+       ▼
+Ultrapassou 3.0?
+       │
+    ┌──┴──┐
+   NÃO   SIM
+    │      │
+    │      ▼
+    │   onQueda()
+    │
+    └──► continua monitorando
+```
+
+---
+
+## Função para interromper o monitoramento
+
+```ts
+pararMonitoramento(): void
+```
+
+Responsável por:
+
+- interromper a inscrição no acelerômetro;
+- limpar a referência da inscrição.
+
+É utilizada quando a `HomeScreen` deixa de estar ativa ou quando o monitoramento precisa ser interrompido.
+
+---
+
+# 2. Serviço de Localização (`services/localization.ts`)
+
+**Propósito:**
+
+Responsável pela lógica relacionada à obtenção da localização atual do dispositivo.
+
+O serviço utiliza o `hardware/gps.js` para acessar o GPS.
+
+O `localization.ts` não exibe mapas e não decide o que fazer com a localização. Ele apenas obtém e retorna os dados.
+
+---
+
+## Função principal
+
+```ts
+obterLocalizacaoAtual(): Promise<Localizacao>
+```
+
+A função solicita a localização através do módulo de hardware:
+
+```ts
+const localizacao = await obterLocalizacao();
+```
+
+Depois, retorna os dados para quem solicitou.
+
+---
+
+## Dados retornados
+
+A localização possui:
+
+```text
+latitude
+longitude
+```
+
+Exemplo:
+
+```js
+{
+  latitude: -23.5505,
+  longitude: -46.6333
+}
+```
+
+Esses dados são utilizados posteriormente pela `emergency_screen.js` para posicionar o marcador no mapa.
+
+---
+
+## Funcionamento
+
+```text
+emergency_screen.js
+        │
+        ▼
+localization.ts
+        │
+        ▼
+gps.js
+        │
+        ▼
+GPS do dispositivo
+        │
+        ▼
+latitude + longitude
+        │
+        ▼
+localization.ts
+        │
+        ▼
+emergency_screen.js
+        │
+        ▼
+MapView
+```
+
+---
+
+# 3. Integração com as Screens
+
+Os Services não controlam diretamente a interface.
+
+A comunicação acontece através de funções de callback e retornos de dados.
+
+---
+
+## Detecção de queda
+
+A `home_screen.js` inicia o monitoramento:
+
+```js
+await iniciarMonitoramento(() => {
+  setAlertVisible(true);
+});
+```
+
+Quando o acelerômetro identifica uma possível queda:
+
+```text
+accelerometer.js
+       ↓
+fall_detector.ts
+       ↓
+onQueda()
+       ↓
+home_screen.js
+       ↓
+alert_modal.js
+```
+
+---
+
+## Localização
+
+Quando a emergência é iniciada, a `emergency_screen.js` solicita a localização:
+
+```js
+const local = await obterLocalizacaoAtual();
+
+setLocalizacao(local);
+```
+
+O fluxo é:
+
+```text
+emergency_screen.js
+       ↓
+localization.ts
+       ↓
+gps.js
+       ↓
+latitude + longitude
+       ↓
+emergency_screen.js
+       ↓
+mapa
+```
+
+---
+
+# 4. Responsabilidade de cada camada
+
+O projeto utiliza três camadas principais.
+
+## Hardware
+
+Responsável por acessar diretamente os recursos do dispositivo.
+
+```text
+hardware/
+├── accelerometer.js
+├── gps.js
+└── audio.js
+```
+
+### Hardware responde:
+
+> "Como acessar o recurso?"
+
+---
+
+## Services
+
+Responsável pelas regras e pela lógica do sistema.
+
+```text
+services/
+├── fall_detector.ts
+└── localization.ts
+```
+
+### Services respondem:
+
+> "O que fazer com os dados?"
+
+---
+
+## Screens
+
+Responsável pela interface e interação com o usuário.
+
+```text
+screens/
+├── home_screen.js
+├── alert_modal.js
+└── emergency_screen.js
+```
+
+### Screens respondem:
+
+> "O que o usuário deve ver e fazer?"
+
+---
+
+# 5. Fluxo completo do aplicativo
+
+```text
+                    HomeScreen
+                        │
+                        ▼
+                 fall_detector.ts
+                        │
+                        ▼
+                 accelerometer.js
+                        │
+                        ▼
+                  x, y, z
+                        │
+                        ▼
+              Detectou possível queda
+                        │
+                        ▼
+                  Alert Modal
+                        │
+              ┌─────────┴─────────┐
+              │                   │
+             SIM                 NÃO
+              │                   │
+              ▼                   ▼
+        Fecha alerta          Emergência
+              │                   │
+              │                   ▼
+              │          EmergencyScreen
+              │                   │
+              │            ┌──────┴──────┐
+              │            │             │
+              │            ▼             ▼
+              │      localization.ts   audio.js
+              │            │             │
+              │            ▼             ▼
+              │          gps.js       alerta.mp3
+              │            │
+              │            ▼
+              │       Localização
+              │            │
+              │            ▼
+              │           Mapa
+              │
+              ▼
+        Monitoramento
+           continua
+```
+
+Se o usuário não responder ao alerta dentro de **10 segundos**, a `alert_modal.js` inicia o mesmo fluxo de emergência.
+
+---
+
+# 6. Princípio de separação
+
+Cada arquivo deve possuir uma responsabilidade clara.
+
+```text
+accelerometer.js
+→ Acessa o acelerômetro.
+
+fall_detector.ts
+→ Interpreta os dados e detecta uma possível queda.
+
+alert_modal.js
+→ Exibe o alerta e controla o contador de 15 segundos.
+
+gps.js
+→ Acessa o GPS.
+
+localization.ts
+→ Organiza a obtenção da localização.
+
+audio.js
+→ Reproduz e interrompe o áudio.
+
+emergency_screen.js
+→ Exibe o mapa e controla a interface da emergência.
+
+home_screen.js
+→ Exibe a tela principal e inicia o monitoramento.
+```
+````

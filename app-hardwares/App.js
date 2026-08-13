@@ -1,29 +1,24 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import { NavigationContainer } from "@react-navigation/native";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+
+import HomeScreen from "./src/screens/home_screen";
+import EmergencyScreen from "./src/screens/emergency_screen";
+
+const Stack = createNativeStackNavigator();
 
 export default function App() {
   return (
-    <View style={styles.container}>
-      <Text>Open up App.js to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
+    <NavigationContainer>
+      <Stack.Navigator
+        initialRouteName="home_screen"
+        screenOptions={{
+          headerShown: false,
+        }}
+      >
+        <Stack.Screen name="home_screen" component={HomeScreen} />
+
+        <Stack.Screen name="emergency_screen" component={EmergencyScreen} />
+      </Stack.Navigator>
+    </NavigationContainer>
   );
-}
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
-
-import * as Location from 'expo-location';
-
-const { status } = await Location.requestForegroundPermissionsAsync();
-
-if (status !== 'granted') {
-  // usuario negou — informe na UI, nao trave o app
-  return;
 }
