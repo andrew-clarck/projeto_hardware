@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import {Modal,StyleSheet,Text,TouchableOpacity,View,} from "react-native";
 
-const TEMPO_ALERTA = 15;
+const TEMPO_ALERTA = 10;
 
 export default function AlertScreen({
   visible,
@@ -15,11 +15,11 @@ export default function AlertScreen({
       return;
     }
 
-    setTempo(TEMPO_ALERT);
+    setTempo(TEMPO_ALERTA);
 
     const contador = setInterval(() => {
       setTempo((tempoAtual) => {
-        if (tempoAtual <= ) {
+        if (tempoAtual <= 0) {
           clearInterval(contador);
 
           onEmergency();
